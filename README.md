@@ -1,7 +1,8 @@
 # Kingdom Hearts Downloader
 
 Nasty and Complicated selective downloaders for Kingdom Hearts 1.5+2.5 from Steam and Epic Games Store, for Windows and Linux.
-[add images later]
+
+<img width="264" height="426" alt="image" src="https://github.com/user-attachments/assets/2bef0a1e-a2d6-4ba9-af08-6729a6d2aa23" />
 
 > [!CAUTION]
 > I don't think this needs to be said, but this will not give you free access to the games. This will only download the games from your Steam or Epic Games account.
@@ -10,7 +11,7 @@ Nasty and Complicated selective downloaders for Kingdom Hearts 1.5+2.5 from Stea
 
 ## Usage
 
-Just download the latest [release](https://github.com/SandeMC/kh-downloader/releases/latest) for your platform, launch it and follow the instructions. The buttons are self-explanatory... I think?
+Just download the latest [release](https://github.com/SandeMC/kh-downloader/releases/latest) for your platform, launch it and follow the instructions. The buttons are self-explanatory... I think? The default folders are your Steam installation location or D:\Games\KH1.5_2.5 (or C:\\) for Epic.
 
 Report any issue at [Issues](https://github.com/SandeMC/kh-downloader/issues). The app may become out of date if the game updates - please inform me if it does.
 
@@ -27,6 +28,8 @@ Well, you actually only need 17.65 GiB of downloading to play the Steam Version.
 Basically, the games are actually not requiring eachother at all. They don't share any files beyond the Settings Menu. The launcher is literally unnecessary and only actually required by the movies - other games can be launched individually. If Square cared, they could've simply given you selective DLCs alike to Halo: Master Chief Collection to download the games selectively, but no they didn't care lol.
 
 What I did is utilize steamroom-client (rust implementation of DepotDownloader), epic-api-rs and Epic-Asset-Manager (some code borrowed from there) to individually download the files from the official depots without ever downloading the files you don't need. You can do that with any game, but go learn DepotDownloader on your own for that.
+
+I should probably also disclose that this app's development was AI-assisted. I didn't know Rust before this so it kind of aided me in learning some Rust things.
 
 ## Game didn't appear on Steam
 
@@ -59,4 +62,4 @@ You installed the game via Steam but it didn't appear on Steam even after restar
 }
 ```
 
-Replace {install_dir_name} with your installation folder (make sure you replace \ and / with \\\) and {timestamp_secs} with an [accurate Unix timestamp](https://www.unixtimestamp.com) (or just put 1782260634 it doesn't really matter).
+Replace {install_dir_name} with your installation folder (make sure you replace \ and / with \\\\) and {timestamp_secs} with an [accurate Unix timestamp](https://www.unixtimestamp.com) (or just put 1782260634 it doesn't really matter).
