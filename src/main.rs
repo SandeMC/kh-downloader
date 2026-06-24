@@ -124,6 +124,8 @@ async fn main() -> Result<(), slint::PlatformError> {
     let ui_handle = ui.as_weak();
     let cancel_flag = Arc::new(AtomicBool::new(false));
 
+    let cached_steam_path = steam_default_path();
+
     if let Some(u) = ui_handle.upgrade() {
         populate_name_sizes(&u);
         apply_install_path(&u, steam_default_path());
@@ -142,9 +144,10 @@ async fn main() -> Result<(), slint::PlatformError> {
 
     ui.on_platform_changed({
         let ui_handle = ui_handle.clone();
+        let steam_path = cached_steam_path.clone();
         move |is_steam_now| {
             if let Some(ui) = ui_handle.upgrade() {
-                let new_path = if is_steam_now { steam_default_path() } else { epic_default_path() };
+                let new_path = if is_steam_now { steam_path.clone() } else { epic_default_path() };
                 apply_install_path(&ui, new_path);
             }
         }
