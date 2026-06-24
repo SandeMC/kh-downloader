@@ -11,7 +11,7 @@ Nasty and Complicated selective downloaders for Kingdom Hearts 1.5+2.5 from Stea
 
 ## Usage
 
-Just download the latest [release](https://github.com/SandeMC/kh-downloader/releases/latest) for your platform, launch it and follow the instructions. The buttons are self-explanatory... I think? The default folders are your Steam installation location and D:\Games\KH1.5_2.5 (or C:\\).
+Just download the latest [release](https://github.com/SandeMC/kh-downloader/releases/latest) for your platform, launch it and follow the instructions. The buttons are self-explanatory... I think? The default folders are your Steam installation location or D:\Games\KH1.5_2.5 (or C:\\) for Epic.
 
 Report any issue at [Issues](https://github.com/SandeMC/kh-downloader/issues). The app may become out of date if the game updates - please inform me if it does.
 
