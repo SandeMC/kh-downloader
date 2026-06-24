@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![recursion_limit = "256"]
 slint::include_modules!();
 
@@ -155,6 +156,8 @@ async fn main() -> Result<(), slint::PlatformError> {
             let ui = ui_handle.unwrap();
             let is_install = ui.get_is_install();
             if !is_install { return; }
+            let sel_days = ui.get_sel_days();
+            let sel_coded = ui.get_sel_coded();
             if !sel_days && !sel_coded { return; }
             if !ui.get_sel_mare() { ui.set_sel_mare(true); }
             if !ui.get_sel_base() { ui.set_sel_base(true); }
@@ -179,8 +182,6 @@ async fn main() -> Result<(), slint::PlatformError> {
             let path = ui.get_install_path().to_string();
             let platform_name = if is_steam { "Steam" } else { "Epic Games Store" };
 
-            let sel_days = ui.get_sel_days();
-            let sel_coded = ui.get_sel_coded();
             let sel_mare = ui.get_sel_mare();
             let sel_base = ui.get_sel_base();
 
