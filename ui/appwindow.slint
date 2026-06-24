@@ -1,0 +1,443 @@
+import { Button, VerticalBox, ProgressIndicator, CheckBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
+
+component LoginDialog inherits Rectangle {
+    background: #1e1e2e;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: #444;
+    width: 420px;
+    height: 480px;
+
+    in-out property <string> username: "";
+    in-out property <string> password: "";
+    in-out property <string> guard_code: "";
+    in-out property <image> qr_image;
+
+    in-out property <string> title_text: "Steam Login";
+    in-out property <string> status_text: "Enter your Steam credentials or use QR login.";
+    in-out property <bool> show_guard: false;
+    in-out property <bool> show_qr: false;
+    in-out property <bool> show_mobile_confirm: false;
+    in-out property <bool> busy: false;
+
+    in-out property <string> code_label: "Steam Guard Code";
+    in-out property <string> code_placeholder: "Enter code from email or authenticator";
+
+    callback submit_credentials(string, string);
+    callback submit_guard(string);
+    callback request_qr();
+    callback cancel_login();
+    callback request_cancel();
+
+    VerticalBox {
+        padding: 24px;
+        spacing: 14px;
+
+        Text {
+            text: root.title_text;
+            font-size: 18px;
+            font-weight: 700;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.status_text;
+            horizontal-alignment: center;
+            color: #aaa;
+            font-size: 12px;
+            wrap: word-wrap;
+        }
+
+        if !root.show_guard && !root.show_qr && !root.show_mobile_confirm: VerticalBox {
+            spacing: 10px;
+
+            Text { text: "Username"; font-size: 12px; color: #aaa; }
+            LineEdit {
+                placeholder-text: "Steam username";
+                text <=> root.username;
+                enabled: !root.busy;
+            }
+
+            Text { text: "Password"; font-size: 12px; color: #aaa; }
+            LineEdit {
+                placeholder-text: "Password";
+                text <=> root.password;
+                input-type: InputType.password;
+                enabled: !root.busy;
+                accepted => { root.submit_credentials(root.username, root.password); }
+            }
+
+            HorizontalBox {
+                spacing: 10px;
+
+                Button {
+                    text: root.busy ? "Signing in..." : "Sign In";
+                    enabled: !root.busy && root.username != "" && root.password != "";
+                    clicked => { root.submit_credentials(root.username, root.password); }
+                }
+                Button {
+                    text: root.busy ? "Loading..." : "QR Login";
+                    enabled: !root.busy;
+                    clicked => { root.request_qr(); }
+                }
+            }
+        }
+
+        if root.show_guard && !root.show_qr && !root.show_mobile_confirm: VerticalBox {
+            spacing: 10px;
+
+            Text { text: root.code_label; font-size: 12px; color: #aaa; }
+            LineEdit {
+                placeholder-text: root.code_placeholder;
+                text <=> root.guard_code;
+                enabled: !root.busy;
+                accepted => { root.submit_guard(root.guard_code); }
+            }
+
+            Button {
+                text: root.busy ? "Verifying..." : "Submit Code";
+                enabled: !root.busy && root.guard_code != "";
+                clicked => { root.submit_guard(root.guard_code); }
+            }
+        }
+
+        if root.show_mobile_confirm: VerticalBox {
+            spacing: 10px;
+            alignment: center;
+
+            Text {
+                text: "Approve from Mobile App";
+                font-size: 16px;
+                font-weight: 700;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: "Please open your Steam mobile app and approve this login request to continue.";
+                font-size: 12px;
+                color: #aaa;
+                wrap: word-wrap;
+                horizontal-alignment: center;
+            }
+        }
+
+        Button {
+            text: "Cancel";
+            clicked => { root.cancel_login(); }
+        }
+
+        if root.show_qr: VerticalBox {
+            spacing: 16px;
+            alignment: center;
+
+            Text {
+                text: "Scan this QR Code in the Steam mobile app:";
+                font-size: 12px;
+                color: #aaa;
+                horizontal-alignment: center;
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 200px;
+                    height: 200px;
+                    background: white;
+                    border-radius: 12px;
+
+                    Image {
+                        source: root.qr_image;
+                        width: 176px;
+                        height: 176px;
+                        image-fit: contain;
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    width: 450px;
+    height: 700px;
+    title: "Kingdom Hearts Downloader";
+
+    in-out property <float> download_progress: 0.0;
+    in-out property <bool> is_install: true;
+    in-out property <bool> is_steam: true;
+    in-out property <bool> is_busy: false;
+    in-out property <string> install_path: "C:/Program Files (x86)/Steam/steamapps/common/KINGDOM HEARTS -HD 1.5+2.5 ReMIX-";
+
+    callback enforce_mare_deps(string);
+    callback request_directory();
+    callback request_procedure();
+
+    callback login_submit_credentials(string, string);
+    callback login_submit_guard(string);
+    callback login_request_qr();
+    callback login_cancel();
+    callback request_cancel();
+    callback platform_changed(bool);
+
+    in-out property <bool> inst_base: false;
+    in-out property <bool> inst_mare: false;
+    in-out property <bool> inst_kh1: false;
+    in-out property <bool> inst_recom: false;
+    in-out property <bool> inst_days: false;
+    in-out property <bool> inst_kh2: false;
+    in-out property <bool> inst_bbs: false;
+    in-out property <bool> inst_coded: false;
+    in-out property <bool> inst_theater: false;
+
+    in-out property <bool> sel_base: true;
+    in-out property <bool> sel_mare: true;
+    in-out property <bool> sel_kh1: true;
+    in-out property <bool> sel_recom: true;
+    in-out property <bool> sel_days: true;
+    in-out property <bool> sel_kh2: true;
+    in-out property <bool> sel_bbs: true;
+    in-out property <bool> sel_coded: true;
+    in-out property <bool> sel_theater: true;
+
+    in-out property <string> display_info: "";
+
+    in-out property <string> name_base: "Base files [0.91 GiB]";
+    in-out property <string> name_mare: "Mare (Launcher & movies engine) [2.57 GiB]";
+    in-out property <string> name_kh1: "Kingdom Hearts Final Mix [10.45 GiB]";
+    in-out property <string> name_recom: "Kingdom Hearts Re:Chain of Memories [8.68 GiB]";
+    in-out property <string> name_days: "Kingdom Hearts 358/2 Days (movie) [4.36 GiB]";
+    in-out property <string> name_kh2: "Kingdom Hearts II Final Mix [16.74 GiB]";
+    in-out property <string> name_bbs: "Kingdom Hearts Birth by Sleep Final Mix [8.21 GiB]";
+    in-out property <string> name_coded: "Kingdom Hearts Re:coded (movie) [3.15 GiB]";
+    in-out property <string> name_theater: "Theater (cutscenes as movie) [10.35 GiB]";
+
+    in-out property <float> size_base: 0.91;
+    in-out property <float> size_mare: 2.57;
+    in-out property <float> size_kh1: 10.45;
+    in-out property <float> size_recom: 8.68;
+    in-out property <float> size_days: 4.36;
+    in-out property <float> size_kh2: 16.74;
+    in-out property <float> size_bbs: 8.21;
+    in-out property <float> size_coded: 3.15;
+    in-out property <float> size_theater: 10.35;
+
+    in-out property <bool>   login_visible: false;
+    in-out property <string> login_title: "Steam Login";
+    in-out property <string> login_status: "Enter your Steam credentials or use QR login.";
+    in-out property <bool>   login_show_guard: false;
+    in-out property <bool>   login_show_qr: false;
+    in-out property <bool>   login_show_mobile_confirm: false;
+    in-out property <bool>   login_busy: false;
+    in-out property <image>  login_qr_image;
+    in-out property <string> login_code_label: "Steam Guard Code";
+    in-out property <string> login_code_placeholder: "Enter code from email or authenticator";
+
+    property <bool> mare_enabled:
+        !root.is_busy && (root.is_install ? (!root.sel_days && !root.sel_coded) : root.inst_mare);
+
+    property <float> total_size:
+        (root.sel_base ? root.size_base : 0.0) +
+        (root.sel_mare ? root.size_mare : 0.0) +
+        (root.sel_kh1 ? root.size_kh1 : 0.0) +
+        (root.sel_recom ? root.size_recom : 0.0) +
+        (root.sel_days ? root.size_days : 0.0) +
+        (root.sel_kh2 ? root.size_kh2 : 0.0) +
+        (root.sel_bbs ? root.size_bbs : 0.0) +
+        (root.sel_coded ? root.size_coded : 0.0) +
+        (root.sel_theater ? root.size_theater : 0.0);
+
+    VerticalBox {
+
+        Text {
+            text: "Kingdom Hearts Downloader";
+            horizontal-alignment: center;
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        VerticalBox {
+
+            Text { text: "Game location:"; horizontal-alignment:center; vertical-alignment: center; font-weight: 400; font-size: 16px; }
+
+            HorizontalBox {
+                padding-top: -5px;
+                LineEdit {
+                    text: root.install_path;
+                    read-only: true;
+                    horizontal-stretch: 1;
+                    enabled: !root.is_busy;
+                }
+                Button {
+                    text: "Browse...";
+                    clicked => { root.request_directory(); }
+                    enabled: !root.is_busy;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+
+            Rectangle {
+                border-radius: 6px;
+                border-width: 1px;
+                border-color: root.is_steam ? #2196F3 : (steam_touch.has-hover ? #888 : #555);
+                background: root.is_steam ? rgba(33, 150, 243, 0.15) : (steam_touch.has-hover ? rgba(255, 255, 255, 0.05) : transparent);
+                steam_touch := TouchArea {
+                    enabled: !root.is_busy;
+                    clicked => { root.is_steam = true; root.platform_changed(true); }
+                }
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 12px; alignment: center;
+                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: root.is_steam ? #2196F3 : transparent; border-width: 1px; border-color: root.is_steam ? #2196F3 : #888; }
+                    Text { text: "Steam"; font-weight: root.is_steam ? 600 : 400; }
+                }
+            }
+
+            Rectangle {
+                border-radius: 6px;
+                border-width: 1px;
+                border-color: !root.is_steam ? #2196F3 : (egs_touch.has-hover ? #888 : #555);
+                background: !root.is_steam ? rgba(33, 150, 243, 0.15) : (egs_touch.has-hover ? rgba(255, 255, 255, 0.05) : transparent);
+                egs_touch := TouchArea {
+                    enabled: !root.is_busy;
+                    clicked => { root.is_steam = false; root.platform_changed(false); }
+                }
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 12px; alignment: center;
+                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: !root.is_steam ? #2196F3 : transparent; border-width: 1px; border-color: !root.is_steam ? #2196F3 : #888; }
+                    Text { text: "Epic Games Store"; font-weight: !root.is_steam ? 600 : 400; }
+                }
+            }
+        }
+
+        Text {
+            text: "You will be prompted to log into the selected platform on install";
+            font-weight: 200;
+            horizontal-alignment: center;
+        }
+
+        HorizontalBox {
+            alignment: center;
+            spacing: 20px;
+
+            Rectangle {
+                border-radius: 6px;
+                border-width: 1px;
+                border-color: root.is_install ? #4CAF50 : (install_touch.has-hover ? #888 : #555);
+                background: root.is_install ? rgba(76, 175, 80, 0.15) : (install_touch.has-hover ? rgba(255, 255, 255, 0.05) : transparent);
+                install_touch := TouchArea {
+                    enabled: !root.is_busy;
+                    clicked => {
+                        root.is_install = true;
+                        root.sel_base = true; root.sel_mare = true; root.sel_kh1 = true; root.sel_recom = true;
+                        root.sel_days = true; root.sel_kh2 = true; root.sel_bbs = true;
+                        root.sel_coded = true; root.sel_theater = true;
+                    }
+                }
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 12px; alignment: center;
+                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: root.is_install ? #4CAF50 : transparent; border-width: 1px; border-color: root.is_install ? #4CAF50 : #888; }
+                    Text { text: "Install"; font-weight: root.is_install ? 600 : 400; }
+                }
+            }
+
+            Rectangle {
+                border-radius: 6px;
+                border-width: 1px;
+                border-color: !root.is_install ? #F44336 : (uninstall_touch.has-hover ? #888 : #555);
+                background: !root.is_install ? rgba(244, 67, 54, 0.15) : (uninstall_touch.has-hover ? rgba(255, 255, 255, 0.05) : transparent);
+                uninstall_touch := TouchArea {
+                    enabled: !root.is_busy;
+                    clicked => {
+                        root.is_install = false;
+                        root.sel_base = false; root.sel_mare = false; root.sel_kh1 = false; root.sel_recom = false;
+                        root.sel_days = false; root.sel_kh2 = false; root.sel_bbs = false;
+                        root.sel_coded = false; root.sel_theater = false;
+                    }
+                }
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 12px; alignment: center;
+                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: !root.is_install ? #F44336 : transparent; border-width: 1px; border-color: !root.is_install ? #F44336 : #888; }
+                    Text { text: "Uninstall"; font-weight: !root.is_install ? 600 : 400; }
+                }
+            }
+        }
+
+        Text { text: "Select your games below:"; }
+
+        ScrollView {
+            VerticalBox {
+                alignment: start;
+                spacing: 8px;
+                CheckBox { text <=> root.name_base; checked <=> root.sel_base; enabled: !root.is_busy && (root.is_install ? false : root.inst_base); }
+                CheckBox { text <=> root.name_mare; checked <=> root.sel_mare; enabled: root.mare_enabled; }
+                CheckBox { text <=> root.name_kh1; checked <=> root.sel_kh1; enabled: !root.is_busy && (root.is_install ? true : root.inst_kh1); }
+                CheckBox { text <=> root.name_recom; checked <=> root.sel_recom; enabled: !root.is_busy && (root.is_install ? true : root.inst_recom); }
+                CheckBox { text <=> root.name_days; checked <=> root.sel_days; enabled: !root.is_busy && (root.is_install ? true : root.inst_days);
+                    toggled => { if root.is_install && root.sel_days { root.enforce_mare_deps("days"); } }
+                }
+                CheckBox { text <=> root.name_kh2; checked <=> root.sel_kh2; enabled: !root.is_busy && (root.is_install ? true : root.inst_kh2); }
+                CheckBox { text <=> root.name_bbs; checked <=> root.sel_bbs; enabled: !root.is_busy && (root.is_install ? true : root.inst_bbs); }
+                CheckBox { text <=> root.name_coded; checked <=> root.sel_coded; enabled: !root.is_busy && (root.is_install ? true : root.inst_coded);
+                    toggled => { if root.is_install && root.sel_coded { root.enforce_mare_deps("coded"); } }
+                }
+                CheckBox { text <=> root.name_theater; checked <=> root.sel_theater; enabled: !root.is_busy && (root.is_install ? true : root.inst_theater); }
+            }
+        }
+
+        Text {
+            text: "Total Selected Storage: " + (Math.round(root.total_size * 100) / 100) + " GiB";
+            horizontal-alignment: center;
+            font-weight: 700;
+        }
+
+        Button {
+            text: root.is_busy ? "Cancel" : (root.is_install ? "Install" : "Uninstall");
+            clicked => {
+                if root.is_busy {
+                    root.request_cancel();
+                } else {
+                    root.request_procedure();
+                }
+            }
+        }
+
+        Text {
+            text: root.display_info;
+            horizontal-alignment: center;
+            color: #888;
+        }
+
+        ProgressIndicator { progress: root.download_progress; }
+    }
+
+    Rectangle {
+        // Kept always in the tree, just hidden for proper functioning
+        visible: root.login_visible;
+        x: 0; y: 0;
+        width: root.width;
+        height: root.height;
+        background: rgba(0, 0, 0, 0.6);
+        LoginDialog {
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height) / 2;
+            title_text <=> root.login_title;
+            status_text <=> root.login_status;
+            show_guard <=> root.login_show_guard;
+            show_qr <=> root.login_show_qr;
+            show_mobile_confirm <=> root.login_show_mobile_confirm;
+            busy <=> root.login_busy;
+            qr_image <=> root.login_qr_image;
+            code_label <=> root.login_code_label;
+            code_placeholder <=> root.login_code_placeholder;
+            submit_credentials(u, p) => { root.login_submit_credentials(u, p); }
+            submit_guard(c) => { root.login_submit_guard(c); }
+            request_qr() => { root.login_request_qr(); }
+            cancel_login() => { root.login_cancel(); }
+        }
+    }
+}
